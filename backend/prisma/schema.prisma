@@ -6,6 +6,10 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["fullTextSearch", "fullTextIndex"]
+  // `native` covers local dev (macOS/Windows/Linux). The additional targets
+  // cover common deploy images: Render / Fly / Railway (debian) and Alpine
+  // (alpine) so `prisma generate` produces the right engine binary.
+  binaryTargets   = ["native", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

@@ -6,7 +6,9 @@ const schema = z.object({
   API_PREFIX: z.string().startsWith('/').default('/api'),
 
   CORS_ORIGIN: z.string().min(1),
-  COOKIE_DOMAIN: z.string().min(1).default('localhost'),
+  // Leave blank in production if backend + frontend are on different domains
+  // — the browser will scope the cookie to the response host automatically.
+  COOKIE_DOMAIN: z.string().default(''),
 
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
