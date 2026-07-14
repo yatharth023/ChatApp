@@ -1,0 +1,53 @@
+{
+  "name": "chatapp-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ChatApp production backend — Express + Socket.io + Prisma + Redis",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "scripts": {
+    "dev": "node --watch --env-file=.env src/server.js",
+    "start": "node --env-file=.env src/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "test": "NODE_ENV=test node --test --env-file=.env.test tests",
+    "test:watch": "NODE_ENV=test node --test --watch --env-file=.env.test tests",
+    "lint": "eslint 'src/**/*.js' 'tests/**/*.js'",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "bcrypt": "^5.1.1",
+    "cloudinary": "^2.5.1",
+    "compression": "^1.7.5",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "node-cron": "^3.0.3",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "pino-pretty": "^11.3.0",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.0.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "eslint": "^9.14.0",
+    "prettier": "^3.3.3",
+    "prisma": "^5.22.0",
+    "socket.io-client": "^4.8.1",
+    "supertest": "^7.0.0"
+  }
+}
