@@ -17,6 +17,15 @@ RUN npx prisma generate
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 
+# Prisma's query + migration engines are dynamically-linked Rust binaries that
+# need libssl at runtime. `node:*-slim` variants ship without OpenSSL, so
+# `prisma migrate deploy` crashes with "Schema engine error" and the warning
+# "Prisma failed to detect the libssl/openssl version". Install openssl (which
+# pulls in libssl3 on Debian 12) plus ca-certificates for the TLS trust chain.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # The base image already ships with a non-root `node` user at UID/GID 1000
 # (creating our own here fails with "GID 1000 already exists"), so we reuse
 # it and just make sure /app is writable by that user.
