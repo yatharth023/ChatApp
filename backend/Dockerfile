@@ -17,20 +17,20 @@ RUN npx prisma generate
 FROM node:20-bookworm-slim AS runtime
 WORKDIR /app
 
-# Non-root
-RUN groupadd -r app --gid=1000 && useradd -r -g app --uid=1000 --home /home/app --create-home app
-
+# The base image already ships with a non-root `node` user at UID/GID 1000
+# (creating our own here fails with "GID 1000 already exists"), so we reuse
+# it and just make sure /app is writable by that user.
 ENV NODE_ENV=production \
     NPM_CONFIG_LOGLEVEL=warn \
     PORT=4000
 
-COPY --from=deps      /app/node_modules ./node_modules
-COPY --from=prisma-build /app/node_modules/.prisma ./node_modules/.prisma
-COPY package.json ./
-COPY prisma ./prisma
-COPY src ./src
+COPY --chown=node:node --from=deps      /app/node_modules ./node_modules
+COPY --chown=node:node --from=prisma-build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --chown=node:node package.json ./
+COPY --chown=node:node prisma ./prisma
+COPY --chown=node:node src ./src
 
-USER app
+USER node
 EXPOSE 4000
 
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \
