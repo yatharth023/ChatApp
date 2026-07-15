@@ -24,14 +24,18 @@ export const buildApp = () => {
     }),
   );
 
-  const origins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+  // Normalise once: browsers never include a trailing slash on the Origin
+  // header, so a `.env` value like `https://foo.vercel.app/` would silently
+  // never match. Strip trailing slashes on both sides before comparing.
+  const stripSlash = (s) => s.replace(/\/+$/, '');
+  const origins = env.CORS_ORIGIN.split(',').map((o) => stripSlash(o.trim())).filter(Boolean);
   const allowAny = origins.includes('*');
   app.use(
     cors({
       origin: (origin, cb) => {
         // Same-origin / server-to-server / curl → no Origin header.
         if (!origin) return cb(null, true);
-        if (allowAny || origins.includes(origin)) return cb(null, true);
+        if (allowAny || origins.includes(stripSlash(origin))) return cb(null, true);
         // Origin not allowed: skip CORS headers instead of throwing, so
         // the request still processes and the browser rejects cleanly
         // (avoiding a 500 that masks the real cause).
