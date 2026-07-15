@@ -1,5 +1,4 @@
 {
-  "//": "SPA fallback only. The /api/* proxy now lives in the Edge Function at api/[...path].js — Vercel routes /api/* to that file automatically, so no rewrite is needed for API traffic.",
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
