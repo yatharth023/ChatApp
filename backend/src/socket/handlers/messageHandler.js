@@ -1,9 +1,7 @@
 import { wrapEvent } from '../utils/handler.js';
 import { emitToRoom, emitToUser } from '../utils/emit.js';
 import { messageService } from '../../services/messageService.js';
-import { presenceService } from '../../services/presenceService.js';
 import { enforceRateLimit } from '../utils/socketRateLimit.js';
-import { peerOf } from '../../utils/roomId.js';
 
 const SEND_LIMIT = 60;
 const SEND_WINDOW_SECONDS = 60;
@@ -20,15 +18,12 @@ const sendMessage = wrapEvent('send_message', async (payload, { io, user }) => {
 
   const message = await messageService.send(user.id, payload);
 
-  // Fan-out: the whole room gets receive_message; sender's other devices too.
+  // Fan-out to everyone in the room (sender's other devices + recipient).
+  // Delivery/read receipts are driven by the recipient's own client events
+  // (`message_delivered` / `message_seen`), so we don't need to peek at
+  // presence here.
   emitToRoom(io, message.roomId, 'receive_message', { message });
 
-  const peerId = peerOf(message.roomId, user.id);
-  const peerOnline = await presenceService.isOnline(peerId);
-  if (peerOnline) {
-    // Recipient is online — the client will emit `message_delivered` back;
-    // we do not preemptively flip status here to preserve accuracy.
-  }
   return { message };
 });
 

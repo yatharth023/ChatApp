@@ -5,12 +5,17 @@ import { logger } from './logger.js';
 const buildClient = (label) => {
   const client = new Redis(env.REDIS_URL, {
     lazyConnect: false,
-    maxRetriesPerRequest: 3,
+    // Fail fast: without these, ioredis queues commands indefinitely while
+    // reconnecting. In prod under Upstash flakes that translates to socket
+    // handlers hanging forever and clients seeing "send_message timed out".
+    // Failing after ~1s makes callers' catch blocks kick in.
+    maxRetriesPerRequest: 1,
+    commandTimeout: 1500,
+    connectTimeout: 5000,
     enableReadyCheck: true,
-    reconnectOnError: (err) => {
-      const target = 'READONLY';
-      return err.message.includes(target);
-    },
+    // Exponential-backoff reconnect capped at 3s.
+    retryStrategy: (times) => Math.min(times * 300, 3000),
+    reconnectOnError: (err) => err.message.includes('READONLY'),
   });
 
   client.on('connect', () => logger.info({ label }, 'redis.connect'));
