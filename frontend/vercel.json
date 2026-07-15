@@ -1,14 +1,6 @@
 {
+  "//": "SPA fallback only. The /api/* proxy now lives in the Edge Function at api/[...path].js — Vercel routes /api/* to that file automatically, so no rewrite is needed for API traffic.",
   "rewrites": [
-    {
-      "//": "1) API traffic → Render. Explicit $1 substitution reliably preserves the sub-path.",
-      "source": "/api/(.*)",
-      "destination": "https://chatapp-hsdt.onrender.com/api/$1"
-    },
-    {
-      "//": "2) SPA fallback for every non-API path. Negative lookahead guarantees /api/... can never be swallowed by this rule.",
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
