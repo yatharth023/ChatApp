@@ -77,15 +77,62 @@ const mutationWithInvalidate = (queryClient, extraKey) => (fn, onOk) => ({
   onError: (err) => toast.error(err?.response?.data?.error?.message ?? 'Something went wrong'),
 });
 
+/**
+ * Optimistically insert a stub into the outgoing-requests cache so the
+ * "Add friend" button flips to "Requested" instantly, without waiting for
+ * the invalidated query to refetch. The subsequent refetch replaces this
+ * stub with the authoritative row from the server.
+ */
+const optimisticallyAddOutgoing = (queryClient, userId) => {
+  queryClient.setQueryData(QUERY_KEYS.FRIENDS_OUTGOING, (prev) => {
+    const list = prev ?? [];
+    if (list.some((r) => r.to?.id === userId)) return list;
+    return [
+      ...list,
+      {
+        friendshipId: `optimistic-${userId}`,
+        requestedAt: new Date().toISOString(),
+        to: { id: userId },
+      },
+    ];
+  });
+};
+
+const rollbackOutgoing = (queryClient, userId) => {
+  queryClient.setQueryData(QUERY_KEYS.FRIENDS_OUTGOING, (prev) =>
+    (prev ?? []).filter((r) => r.to?.id !== userId),
+  );
+};
+
 export const useFriendshipMutations = () => {
   const queryClient = useQueryClient();
   const build = mutationWithInvalidate(queryClient, QUERY_KEYS.CONVERSATIONS);
 
   return {
-    sendRequest: useMutation(build(
-      (userId) => friendshipService.sendRequest(userId),
-      () => toast.success('Friend request sent'),
-    )),
+    sendRequest: useMutation({
+      mutationFn: (userId) => friendshipService.sendRequest(userId),
+      onMutate: (userId) => {
+        // Snapshot then optimistically add — restored in onError if the
+        // server rejects (e.g. blocked or already-friends conflict).
+        const snapshot = queryClient.getQueryData(QUERY_KEYS.FRIENDS_OUTGOING);
+        optimisticallyAddOutgoing(queryClient, userId);
+        return { snapshot };
+      },
+      onError: (err, userId, context) => {
+        if (context?.snapshot !== undefined) {
+          queryClient.setQueryData(QUERY_KEYS.FRIENDS_OUTGOING, context.snapshot);
+        } else {
+          rollbackOutgoing(queryClient, userId);
+        }
+        toast.error(err?.response?.data?.error?.message ?? 'Could not send friend request');
+      },
+      onSuccess: (_data, userId) => {
+        toast.success('Friend request sent');
+        for (const key of INVALIDATE_KEYS) queryClient.invalidateQueries({ queryKey: key });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PROFILE(userId) });
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CONVERSATIONS });
+      },
+    }),
     accept: useMutation(build(
       (userId) => friendshipService.accept(userId),
       () => toast.success('Friend request accepted'),

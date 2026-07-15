@@ -12,14 +12,25 @@ import { registerPresenceHandlers } from './handlers/presenceHandler.js';
 let io;
 
 export const initSocket = (httpServer) => {
-  const origins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+  // Normalise trailing slashes on both sides — browsers never include one in
+  // the Origin header, so a value like "https://foo.vercel.app/" in
+  // CORS_ORIGIN would silently reject every socket handshake. Uses a callback
+  // (instead of the array form) so we can match after stripping.
+  const stripSlash = (s) => s.replace(/\/+$/, '');
+  const origins = env.CORS_ORIGIN.split(',').map((o) => stripSlash(o.trim())).filter(Boolean);
+  const allowAny = origins.includes('*');
 
   io = new Server(httpServer, {
     path: '/socket.io',
     // WebSocket only per spec — no long-polling fallback
     transports: ['websocket'],
     cors: {
-      origin: origins,
+      origin: (origin, cb) => {
+        if (!origin) return cb(null, true);
+        if (allowAny || origins.includes(stripSlash(origin))) return cb(null, true);
+        logger.warn({ origin, allowed: origins }, 'socket.corsRejected');
+        return cb(new Error('Origin not allowed by CORS'));
+      },
       credentials: true,
     },
     // Aggressive timeouts to catch dead peers early
