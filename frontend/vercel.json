@@ -1,6 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+
+  "//": "IMPORTANT: replace `PASTE_YOUR_RENDER_URL_HERE` below with your ACTUAL Render service origin (no trailing slash, no /api).",
+  "//_example": "https://chatapp-abc123.onrender.com",
+
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/:path*",
+      "destination": "https://chatapp-hsdt.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
