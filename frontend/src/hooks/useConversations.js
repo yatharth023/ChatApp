@@ -46,7 +46,12 @@ export const useConversations = () => {
         }),
       );
     },
-    staleTime: 30 * 1000,
+    staleTime: 5_000,
+    // Poll as a fallback for socket delivery gaps — the sidebar should
+    // reflect new/unread messages within a few seconds even if the
+    // realtime broadcast never arrives.
+    refetchInterval: 6_000,
+    refetchOnWindowFocus: true,
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CONVERSATIONS });
