@@ -1,16 +1,13 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-
-  "//": "IMPORTANT: replace `PASTE_YOUR_RENDER_URL_HERE` below with your ACTUAL Render service origin (no trailing slash, no /api).",
-  "//_example": "https://chatapp-abc123.onrender.com",
-
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://chatapp-hsdt.onrender.com/api/:path*"
+      "//": "1) API traffic → Render. Explicit $1 substitution reliably preserves the sub-path.",
+      "source": "/api/(.*)",
+      "destination": "https://chatapp-hsdt.onrender.com/api/$1"
     },
     {
-      "source": "/(.*)",
+      "//": "2) SPA fallback for every non-API path. Negative lookahead guarantees /api/... can never be swallowed by this rule.",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
